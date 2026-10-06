@@ -1,0 +1,6 @@
+dotenv
+ipykernel
+tiktoken
+langchain
+langchain-openai
+langchain-anthropic
