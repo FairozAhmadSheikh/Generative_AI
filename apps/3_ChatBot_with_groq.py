@@ -8,10 +8,8 @@ from langchain_community.utilities import GoogleSerperAPIWrapper
 
 load_dotenv()
 
-model=ChatGroq(model="openai/gpt-oss-20b")
+model=ChatGroq(model="openai/gpt-oss-20b",streaming=True)
 search=GoogleSerperAPIWrapper()
-
-
 
 
 if "memory" not in st.session_state:
@@ -22,9 +20,8 @@ agent=create_agent(
     model=model,
     tools=[search.run],
     checkpointer=st.session_state.memory,
-    system_prompt="You are an ai agent that can search things using Google Search"
+    system_prompt="You are an ai agent that can search things using Google Search but dont do it always just use the tool when you feel its required"
 )
-
 
 # UI Streamlit
 
@@ -41,7 +38,15 @@ query=st.chat_input("Ask anything : ")
 if query:
     st.session_state.history.append({"role":"user","content":query})
     st.chat_message("user").markdown(query)
-    response=agent.invoke({"messages":[{"role":"user","content":query}]},{"configurable":{"thread_id":"1s"}})
-    answer=response['messages'][-1].content
-    st.chat_message('ai').markdown(answer)
-    st.session_state.history.append({"role":"ai","content":answer})
+    response=agent.stream({"messages":[{"role":"user","content":query}]},{"configurable":{"thread_id":"1s"}},stream_mode="messages")
+
+    ai_container=st.chat_message("ai")
+    with ai_container:
+        space=st.empty()
+        message=""
+
+        for chunk in response:
+            message=message+chunk[0].content
+            space.write(message)
+
+        st.session_state.history.append({"role":"ai","content":message})
