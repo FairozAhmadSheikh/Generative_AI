@@ -1,35 +1,47 @@
-# Imports First
 from dotenv import load_dotenv
-from langgraph.checkpoint.memory import MemorySaver
 from langchain_groq import ChatGroq
+from langgraph.checkpoint.memory import MemorySaver
+from langchain.agents import create_agent
 import streamlit as st
 from langchain_community.utilities import GoogleSerperAPIWrapper
 
 
-# Bring in the Env Variables
 load_dotenv()
 
-
-# Iniitialze 
-memory=MemorySaver()
-search=GoogleSerperAPIWrapper()
 model=ChatGroq(model="openai/gpt-oss-20b")
+search=GoogleSerperAPIWrapper()
 
 
 
 
-if 'messages' not in st.session_state:
-    st.session_state.messages=[]
+if "memory" not in st.session_state:
+    st.session_state.memory=MemorySaver()
+    st.session_state.history=[]
 
-for message in st.session_state.messages:
+agent=create_agent(
+    model=model,
+    tools=[search.run],
+    checkpointer=st.session_state.memory,
+    system_prompt="You are an ai agent that can search things using Google Search"
+)
+
+
+# UI Streamlit
+
+st.subheader("SpeedBot ")
+st.markdown("Faster than ChatGPT")
+
+for message in st.session_state.history:
     role=message['role']
-    content=message['content']
+    content=message["content"]
     st.chat_message(role).markdown(content)
 
 
-# streamlit ui
-st.title("Lighting bot")
-st.markdown("Created with Love")
-
-
-
+query=st.chat_input("Ask anything : ")
+if query:
+    st.session_state.history.append({"role":"user","content":query})
+    st.chat_message("user").markdown(query)
+    response=agent.invoke({"messages":[{"role":"user","content":query}]},{"configurable":{"thread_id":"1s"}})
+    answer=response['messages'][-1].content
+    st.chat_message('ai').markdown(answer)
+    st.session_state.history.append({"role":"ai","content":answer})
