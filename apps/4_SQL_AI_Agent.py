@@ -26,6 +26,19 @@ created_at TIMESTAMP CURRENT_TIMESTAMP
 llm=ChatGroq(
     model="openai/gpt-oss-20b"
 )
+toolkit=SQLDatabaseToolkit(db=db,llm=llm)
+tools=toolkit.get_tools()
+
+
+
+# Agent Building
+@st.cache_resource
+def get_agent():
+    agent=create_agent(model=llm,
+                       tools=tools,
+                       checkpointer=InMemorySaver(),
+                       system_prompt=system_prompt
+                       )
 
 
 # Streamlit 
