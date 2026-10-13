@@ -11,3 +11,4 @@ langchain-text-splitters
 beautifulsoup4
 wikipedia
 pypdf
+ipython
