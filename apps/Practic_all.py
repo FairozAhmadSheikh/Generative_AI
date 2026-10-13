@@ -89,12 +89,14 @@ if st.session_state.uploaded_documents and st.session_state.agent:
         st.session_state.messages.append({"role":"user","content":query})
         st.chat_message("human").markdown(query)
         response=st.session_state.agent.invoke({"messages":{"role":"user","content":query}},
-                                               {"configurable":{"thread_id":"121"}})
-        answer=response['messages'][-1].content
-        st.chat_message('assistant').markdown(answer)
-        st.session_state.messages.append({"role":"ai","content":answer})
-        
+                                               {"configurable":{"thread_id":"121"}},
+                                               stream_mode='messages')
+        ai_container=st.chat_message('ai')
+        with ai_container:
+            space=st.empty()
+            message=""
 
-
-
-
+            for chunk in response:
+                message=message+chunk[0].content
+                space.write(message)
+            st.session_state.messages.append({"role":"ai","content":message})
