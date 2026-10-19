@@ -19,10 +19,27 @@ class Question_Category(BaseModel):
 llm=ChatGroq(model="openai/gpt-oss-20b")
 memory=InMemorySaver()
 
-def check_question_category(state:FlowState)->FlowState:
-    structured_llm=llm.with_structured_output(Question_Category)
-    res=structured_llm.invoke(f"Categories my question which is as : {state.question}")
-    state.category=res
+def check_question_category(state: FlowState) -> FlowState:
+    structured_llm = llm.with_structured_output(
+        Question_Category,
+        method="json_mode"
+    )
+
+    res = structured_llm.invoke(
+        f"""
+        Categorize the following question into exactly one category:
+        - coding
+        - google_search
+        - weather
+
+        Return JSON only, in this format:
+        {{"category": "weather"}}
+
+        Question: {state.question}
+        """
+    )
+
+    state.category = res.category
     return state
 
 
